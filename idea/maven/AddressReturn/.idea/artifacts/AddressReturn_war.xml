@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="AddressReturn:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="AddressReturn-1.0-SNAPSHOT.war">
+      <element id="artifact" artifact-name="AddressReturn:war exploded" />
+    </root>
+  </artifact>
+</component>

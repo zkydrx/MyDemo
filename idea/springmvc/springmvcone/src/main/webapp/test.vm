@@ -1,0 +1,967 @@
+#parse("/WEB-INF/page/common/resources.vm")
+## 标题:交接单查询页面
+## @author: duancw
+## @time:2015.12.17
+<div class="easyui-layout">
+    <div region="north">
+        <table class="tms_tool">
+            <tr>
+                <td class="tool_btn_left">
+                    &nbsp;&nbsp;模板类型&nbsp;&nbsp;<input id="export" name="doFlag" class="width-130"/>
+                    <a id="exportAsyncSql" href="javascript:#" class="easyui-linkbutton"
+                       data-options="plain:true,iconCls:'icon-data-export'" onclick="dataExportAsyncSql()">异步导出</a>
+                    <input type="hidden" id="exportType" name="exportType"/>
+                </td>
+                <td class="tool_btn_right">
+                    <a id="cli_btn" href="javascript:queryPaperInfo()">查询</a>
+                    #if(${pc_user.conFunc("TM_06_01_09")})
+                        <a id="batch_sign_return_btn" href="javascript:batchSignReturn()">批量回单</a>
+                    #end
+                </td>
+            </tr>
+        </table>
+        <table class="tms_req">
+            <tr>
+                <th><label for="custId">工厂</label></th>
+                <td><input id="custId" name="custId" class="width-130"/></td>
+
+                <th><label for="warehouseId">库房</label></th>
+                <td><input id="warehouseId" name="warehouseId" class="width-130"/></td>
+
+                <th>收货方</th>
+                <td><input id="consigneeId" name="consigneeId" class="width-130"/></td>
+
+                <th>收货城市</th>
+            ##                <td><input id="consigneePlaceId"></td>
+                <td>#dispPlaceZTreeWithSelected("consigneePlaceId" "fromCity" "" "41" true false "width-130" "")</td>
+
+                <th>收货人</th>
+                <td><input id="consigneeConnect" class="width-130" placeholder="模糊查询"/></td>
+                <th>需求编码</th>
+                <td><input id="demandNo" class="width-130" /></td>
+
+            </tr>
+            <tr>
+                <th>交接单号</th>
+                <td><input id="paperNo" class="width-130"/></td>
+
+                <th>交货单号</th>
+                <td><input id="doId" class="width-130"/></td>
+
+                <th>项目号</th>
+                <td><input id="projectNumber" class="width-130" placeholder="模糊查询"/></td>
+
+                <th>客户单号</th>
+                <td><input id="refNo" name="refNo" class="width-130"/></td>
+
+
+                <th>创建时间</th>
+                <td colspan="3">
+                ##                    #dispCreateDateTimeDefault(
+##                        "doCreateTimeStart" "doCreateTimeStart" "$!{format.getCustomDate(0, 0, -15)} 00:00"
+##                        "doCreateTimeEnd" "doCreateTimeEnd" "$!{format.getCustomDate(0, 0, 0)} 23:59" false false)
+                    #dispDateAndTimeDefault(
+                    "doCreateTimeStart" "doCreateTimeStart" "$!{format.getCustomDate(0, 0, -15)}"
+                    "doCreateTimeEnd" "doCreateTimeEnd" "$!{format.getCustomDate(0, 0, 0)}" false false false
+                    'timeStart' 'timeEnd' false)
+                </td>
+
+            </tr>
+            <tr>
+                <th><label for="erpNo">ERP单号</label></th>
+                <td><input id="erpNo" class="width-130"/></td>
+
+                <th>源交货单号</th>
+                <td><input id="originDoId" class="width-130"/></td>
+            ##                <th><label for="tradeNo">交易单号</label></th>
+            ##                <td><input id="tradeNo" class="width-130"/></td>
+
+                <th><label for="carrierNo">承运商</label></th>
+                <td><input id="carrierNo" name="carrierNo" class="width-130"/></td>
+
+                <th><label for="plateNumber">车牌号</label></th>
+                <td><input id="plateNumber" class="width-130"/></td>
+
+                <th>发货时间</th>
+                <td colspan="3">
+                ##                    #dispCreateDateTimeDefault(
+##                        "doDeliverTimeStart" "doDeliverTimeStart" ""
+##                        "doDeliverTimeEnd" "doDeliverTimeEnd" "" false false)
+                    #dispDateAndTimeDefault(
+                    "doDeliverTimeStart" "doDeliverTimeStart" ""
+                    "doDeliverTimeEnd" "doDeliverTimeEnd" "" false false false 'deliverTimeStart'
+                    'deliverTimeEnd' false)
+                </td>
+
+            </tr>
+            <tr>
+                <th><label for="isOrNo">是否关联单据</label></th>
+                <td><input id="isOrNo" class="width-130"/></td>
+
+                <th><label for="dispatchStatus">状态</label></th>
+                <td><input id="dispatchStatus" name="dispatchStatus" class="width-130"/></td>
+
+
+                <th><label for="dispenseType">运配类型</label></th>
+                <td><input id="dispenseType" name="dispenseType" class="width-130"/></td>
+
+
+                <th><label for="isLocal">市内外埠</label></th>
+                <td><input id="isLocal" name="isLocal" class="width-130"/></td>
+
+                <th>签收时间</th>
+                <td colspan="3">
+                ##                    #dispCreateDateTimeDefault(
+##                        "doSignTimeStart" "doSignTimeStart" ""
+##                        "doSignTimeEnd" "doSignTimeEnd" "" false false)
+                      #dispDateAndTimeDefault(
+                    "doSignTimeStart" "doSignTimeStart" ""
+                    "doSignTimeEnd" "doSignTimeEnd" "" false false false 'signTimeStart' 'signTimeEnd' false)
+                </td>
+
+            </tr>
+        </table>
+    </div>
+    <div region="center">
+    ##        <a href='#' class='dg-noicon-btn' title='签单上传' onclick='checkForPart("HD110000000001")' >签单上传</a>;
+    ##        <a href='#' class='dg-noicon-btn' title='查看签单' onclick='checkForFail("HD110000000001")' >查看签单</a>;
+        <table id="clientsign_datagrid"></table>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    ##    $("#consigneePlaceId").tmsPlaceSelect({
+    ##        baseHref:'$!{path}',
+    ##        onChange:function(newValue,oldValue){
+    ##            console.log("newValue:"+newValue)
+    ##            console.log("oldValue:"+oldValue)
+    ##        }
+    ##    });
+
+    $(function () {
+    ##工厂与库房、收货方下拉选
+        coreSelect({
+            id: "custId",
+        ##            url: "$!{path}/common/findEnumValues/FACTORY",
+            url: "$!{path}/common/findFactoryByUser",
+            cascade: true,
+            hintText: getPleaseSelectOption("工厂"),
+            nextId: "warehouseId",
+            nextUrl: "$!{path}/common/findWarehouseByFactoryAndUser?factory="
+
+        });
+        coreSelect({
+            id: "warehouseId",
+            hintText: getPleaseSelectOption("库房"),
+            pleaseSelectText: getPleaseSelectFirstOption("工厂"),
+            onChange: function () {
+                add_loadConsignee();
+            }
+        });
+        coreSelect({
+            id: "consigneeId",
+            panelHeight: 360,
+            hintText: getPleaseSelectOption("收货方"),
+        });
+    ##        $('#custId').combobox({
+    ##            url:'$!{path}/common/findEnumValues/FACTORY',
+    ##            firstDefaultText: getPleaseSelectOption(""),
+    ##            valueField:'id',
+    ##            textField:'text',
+    ##
+    ##            onSelect:function(f){
+    ##                $('#warehouseId').combobox({
+    ##                    url:'$!{path}/common/findWarehouseByFactory/'+f.id,
+    ##                    valueField:'id',
+    ##                    textField:'text'
+    ##                });
+    ##                $('#consigneeId').combobox({
+    ##                    url:'$!{path}/common/findConsigneeByFactory/'+f.id,
+    ##                    valueField:'id',
+    ##                    textField:'text'
+    ##                });
+    ##            }
+    ##        });
+
+    ##显示信息
+    ##        $('#cli_btn').bind('click', function () {
+    ##            alert("kkkk");
+    ##            queryGrid('clientsign_datagrid', '$!{path}/carrierhandover/findAllDispatchingPaper');
+    ##        });
+    ##导出模板类型
+        initSelectBase("export", '$!{path}/common/findExportTypeForPaperSearch', "auto", null, true);
+        $("#export").combobox({
+            editable: false,
+            onLoadSuccess: function () {
+
+            },
+            onChange: function (newVal, oldVal) {
+                $('#exportType').val(newVal);
+            }
+        });
+    });
+
+    //更新收货方列表
+    function add_loadConsignee() {
+        $('#consigneeId').combobox('loadData', '');
+        $('#consigneeId').combobox({
+            url: '$!{path}/common/findConsigneeByWarehouseId?warehouseId=' + $('#warehouseId').combobox('getValue')
+        });
+    }
+
+    ##运配类型
+    coreSelect({
+        id: "dispenseType",
+        url: "$!{path}/common/findEnumValues/DISPENSE_TYPE?txtCode=1",
+        panelHeight: '198',
+        panelWidth: '220',
+        hintText: getPleaseSelectOption(""),
+        defaultId: ""
+    });
+
+    ##是否关联单据
+    coreSelect({
+        id: "isOrNo",
+        url: "$!{path}/common/findEnumValues/IF",##IS_LOCAL
+        panelHeight: '198',
+        panelWidth: '220',
+        hintText: getPleaseSelectOption(""),
+        defaultId: ""
+    });
+
+
+    ##是否关联单据
+    coreSelect({
+        id: "isLocal",
+        url: "$!{path}/common/findEnumValues/IS_LOCAL",##IS_LOCAL
+        panelHeight: '198',
+        panelWidth: '220',
+        hintText: getPleaseSelectOption(""),
+        defaultId: ""
+    });
+
+
+    ##状态
+    coreSelect({
+        id: "dispatchStatus",
+        url: "$!{path}/common/findDispatchValues/DISPATCH_STATUS",
+        panelHeight: 'auto',
+        multiple: true,
+        hintText: getPleaseSelectOption(""),
+        defaultId: ""
+    });
+
+    // 承运商
+    coreSelect({
+        id: "carrierNo",
+        url: "$!{path}/common/findAllCarriers",
+        panelWidth: '130',
+        panelHeight: '160',
+        hintText: getPleaseSelectOption(""),
+        defaultId: ""
+    });
+
+    //按钮
+    initButtons({
+        ids: 'bath_all_btn, cli_btn, batch_sign_return_btn',
+        icons: 'icon-data-import, icon-search, icon-search'
+    });
+
+
+    function refresh() {
+        $("#clientsign_datagrid").datagrid('reload');
+    }
+
+    $('#clientsign_datagrid').datagrid({
+
+        queryParams: {
+            'custNo': function () {
+            ##工厂
+                return $('#custId').combobox('getValue');
+            },
+            'warehouseId': function () {
+            ##库房
+                return $('#warehouseId').combobox('getValue');
+            },
+            'consigneeId': function () {
+            ##收货方
+                return $('#consigneeId').combobox('getValue');
+            },
+            'demandNo': function () {
+                return $('#demandNo').val();
+            },
+            'consigneePlaceId': function () {
+            ##收货城市
+                return $('#consigneePlaceId').tmsPlaceSelect('getValue');
+            },
+            'consigneeConnect': function () {
+            ##收货人
+                return $('#consigneeConnect').val();
+            },
+            'paperNo': function () {
+            ##交接单号
+                return $('#paperNo').val();
+            },
+            'doId': function () {
+            ##交货单号
+                return $("#doId").val();
+            },
+            'projectNumber': function () {
+            ##项目号
+                return $("#projectNumber").val();
+            },
+            'refNo': function () {
+            ##客户单号
+                return $("#refNo").val();
+            },
+            'originDoId': function () {
+            ##源交货单号
+                return $("#originDoId").val();
+            },
+            'erpNo': function () {
+            ##ERP单号
+                return $("#erpNo").val();
+            },
+            'carrierNo': function () {
+            ##承运商
+                return $("#carrierNo").combobox('getValue');
+            },
+            'plateNumber': function () {
+            ##车牌号
+                return $("#plateNumber").val();
+            },
+            'createTimeStart': function () {
+            ##创建时间
+                var date = $("#doCreateTimeStart").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#timeStart').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "00:00";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+            },
+            'createTimeEnd': function () {
+            ##创建时间
+                var date = $("#doCreateTimeEnd").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#timeEnd').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "23:59";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+            },
+            'deliverTimeStart': function () {
+            ##发货时间
+                var date = $("#doDeliverTimeStart").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#deliverTimeStart').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "00:00";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+                return $("#doDeliverTimeStart").datebox('getValue')+" "+$('#deliverTimeStart').timespinner('getValue');
+            },
+            'deliverTimeEnd': function () {
+            ##发货时间
+                var date = $("#doDeliverTimeEnd").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#deliverTimeEnd').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "23:59";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+//                return $("#doDeliverTimeEnd").datebox('getValue')+" "+$('#deliverTimeEnd').timespinner('getValue');
+            },
+            'signTimeStart': function () {
+            ##签收时间
+                var date = $("#doSignTimeStart").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#signTimeStart').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "00:00";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+//                return $("#doSignTimeStart").datetimebox('getValue')+" "+$('#signTimeStart').timespinner('getValue');
+            },
+            'signTimeEnd': function () {
+            ##签收时间
+                var date = $("#doSignTimeEnd").datebox('getValue');
+                if (!date) {
+                    return '';
+                } else {
+                    var ts = $('#signTimeEnd').timespinner('getValue');
+                    if (!ts) {
+                        return date + " " + "23:59";
+                    } else {
+                        return date + " " + ts;
+                    }
+                }
+//                return $("#doSignTimeEnd").datetimebox('getValue')+" "+$('#signTimeEnd').timespinner('getValue');
+            },
+            'dispatchStatus': function () {
+            ##状态
+                return $('#dispatchStatus').combobox('getValues');
+            },
+            'isRlation': function () {
+            ##是否关联单据
+                return $('#isOrNo').combobox('getValue');
+            },
+            'dispenseType': function () {
+            ##运配类型
+                return $("#dispenseType").combobox('getValue');
+            },
+            'isLocal': function () {
+            ##市内外埠
+                return $('#isLocal').combobox('getValue');
+            },
+        },
+        autoRowHeight: true,
+        nowrap: false,
+        striped: true,
+        singleSelect: false,
+        pageList: [20, 50, 100, 200],
+        columns: [[{
+            field: 'ck',
+            checkbox: 'true'
+        }, {
+            field: 'taskUuid',
+            title: 'taskUuid',
+            hidden: 'true'
+        }, {
+            field: 'transUuid',
+            title: 'transUuid',
+            hidden: 'true'
+        }, {
+            field: 'doResource',
+            title: 'doResource',
+            hidden: 'true'
+        }, {
+            field: 'dispatchStatus',
+            title: 'dispatchStatus',
+            hidden: 'true'
+        },
+
+            {
+                field: 'paperNo',
+                title: '交接单号',
+                width: 120,
+                formatter: function (value, currentRow, rowIndex) {
+                    return "<a title='交接单详情' href='javascript:window.parent.addTab(\"" + value + "-交接单详细信息\", \"$!{path}/dispatchPaper/view/" + currentRow.paperNo + "\")'>" + value + "</a>";
+                }
+            }, {
+                field: 'deliverTime',
+                title: '发货时间',
+                width: 150,
+                sortable: true
+            }, {
+                field: 'warehouseName',
+                title: '库房',
+                width: 120,
+                sortable: true
+            }, {
+                field: 'routeName',
+                title: '途径',
+                width: 120,
+                sortable: true
+            }, {
+                field: 'consigneeName',
+                title: '收货方',
+                width: 180,
+                sortable: true
+            }, {
+                field: 'dispatchStatusDesc',
+                title: '状态',
+                width: 80
+            }, {
+                field: 'effective',
+                title: '时效',
+                width: 60
+            }, {
+                field: 'intendTime',
+                title: '预计送达时间',
+                width: 150,
+                sortable: true
+            }, {
+                field: 'signTime',
+                title: '签收时间',
+                width: 150,
+                sortable: true
+            }, {
+                field: 'carrierName',
+                title: '承运商',
+                width: 150,
+                sortable: true
+            }, {
+                field: 'stowageModeDesc',
+                title: '配载方式',
+                width: 100
+            }, {
+                field: 'freeTypeDesc',
+                title: '运费类型',
+                width: 150
+            }, {
+                field: 'verificationCode',
+                title: '签收码',
+                hidden: true
+            }, {
+                field: 'ifYfAccount',
+                title: '核算是否生成应付对账单',
+                hidden: true
+            }, {
+                field: 'ifYsAccount',
+                title: '核算是否生成应收对账单',
+                hidden: true
+            },
+            {
+                field: 'mailNo',
+                title: '运单号',
+                width:120,
+            },
+            {
+                field: 'act',
+                title: '操作',
+                width: 240,
+                formatter: function (value, currentRow, rowIndex) {
+                    var allSignBtn = "";
+                    var partsitSignBtn = "";
+                    var failSignBtn = "";
+                    var updatePaper = "";
+                    var updatePaperAddDo = "";
+                    var callBackPaper = "";
+                    var deletePaper = "";
+                    var showDoBtn = "";
+                    var vcBtn = "";
+                    var view_operate_record = "";
+                    var editFeeBtn ="";
+                    var locationBtn="";
+                    /**
+                     * 查看追货宝
+                     * @type {string}
+                     */
+                    var orbitBtn="";
+
+                    #if(${pc_user.conFunc("TM_06_01_01")})
+                        allSignBtn = "<a href='#' class='dg-noicon-btn'  title='跟踪信息' onclick='followPaperInfo(\"" + currentRow.paperNo + "\",\"" + currentRow.transUuid + "\");' >跟踪信息</a>";
+                    #end
+                    showDoBtn += "<a title='轨迹查询' class='dg-noicon-btn' href='javascript:window.parent.addTab(\"" + currentRow.paperNo + "-交接单轨迹\", \"https://tms.zjtyd.com:7001/queryByPaperNo?paperNo=" + currentRow.paperNo + "\")'>轨迹查询</a>";
+                    if (currentRow.dispatchStatus != "00" && currentRow.dispatchStatus != "01") {
+                        #if(${pc_user.conFunc("TM_06_01_02")})
+                            partsitSignBtn = "<a href='#' class='dg-noicon-btn' title='签单上传' onclick='uploaderPaper(\"" + currentRow.paperNo + "\");' >签单上传</a>";
+                        #end
+                    }
+                    if (currentRow.dispatchStatus == "07" && currentRow.dispatchStatus == "06") {
+                        #if(${pc_user.conFunc("TM_06_01_03")})
+                            failSignBtn = "<a href='#' class='dg-noicon-btn' title='查看签单'  onclick='showPaper(\"" + currentRow.paperNo + "\");' >查看签单</a>";
+                        #end
+                    }
+                    #if(${pc_user.conFunc("TM_06_01_04")})
+                        updatePaper = "<a href='#' class='dg-noicon-btn' title='修改'  onclick='updatePaper(\"" + currentRow.paperNo + "\", \"" + currentRow.ifYfAccount + "\", \"" + currentRow.ifYsAccount + "\");' > 修改</a>";
+                        updatePaperAddDo = "<a href='#' class='dg-noicon-btn' title='追加单据'  onclick='updatePaperAddDo(\"" + currentRow.paperNo + "\", \"" + currentRow.ifYfAccount + "\", \"" + currentRow.ifYsAccount + "\");' > 追加单据</a>";
+                    #end
+                    #if(${pc_user.conFunc("TM_06_01_11")})
+                        editFeeBtn ="<a href='#' class='dg-noicon-btn' title='修改费用'  onclick='updatePaperFee(\"" + currentRow.paperNo + "\", \"" + currentRow.ifYfAccount + "\", \"" + currentRow.ifYsAccount + "\");' > 修改费用</a>";
+                    #end
+                    if (currentRow.dispatchStatus == "01") {
+                        #if(${pc_user.conFunc("TM_06_01_05")})
+                            callBackPaper = "<a href='#' class='dg-noicon-btn' title='回退交接'  onclick='callBackPaper(\"" + currentRow.paperNo + "\", \"" + currentRow.ifYfAccount + "\", \"" + currentRow.ifYsAccount + "\");' > 回退交接</a>";
+                        #end
+                    }
+                    if (currentRow.dispatchStatus == "07" && currentRow.dispatchStatus == "06") {
+                        #if(${pc_user.conFunc("TM_06_01_06")})
+                            deletePaper = "<a href='#' class='dg-noicon-btn' title='删除签单'  onclick='deletePaper(\"" + currentRow.paperNo + "\");' > 删除签单</a>";
+                        #end
+
+                    }
+                    #if(${pc_user.conFunc("TM_06_01_08")})
+                        vcBtn = "<a href='#' class='dg-noicon-btn' title='签收码'  onclick='showMessage({msg:\"签收码：" + currentRow.verificationCode + "\"});' >签收码</a>";
+                    #end
+
+//                orbitBtn = "<a href='#' class='dg-noicon-btn' title='查看追货宝' onclick='currentRowzhb(\""+ currentRow.mailNo +"\")'>查看追货宝</a>";
+                    orbitBtn = "<a href='/carrierhandovernew/methodnew/methodnew?mailNo=96150307667' class='dg-noicon-btn' >查看追货宝</a>";
+
+                    view_operate_record = "<a href='#' class='dg-noicon-btn' title='操作记录' onclick='operateRecord(\""+ currentRow.paperNo +"\")'>查看操作记录</a>";
+                    locationBtn = "<a href='#' class='dg-noicon-btn' title='立即定位' onclick='operateRecord(\""+ currentRow.paperNo +"\")'>立即定位</a>";
+                    if (currentRow.dispatchStatus != "00") {
+                        return allSignBtn + partsitSignBtn + failSignBtn + updatePaper + updatePaperAddDo + callBackPaper + deletePaper + showDoBtn + vcBtn + orbitBtn + view_operate_record + editFeeBtn ;
+                    }
+                }
+            }
+        ]]
+    });
+
+
+    function uploaderPaper(paperNo) {
+//        alert(paperNo);
+        openOptionDialog("win_uploaderPaper", "签单上传", "350", "50", "icon-edit", "$!{path}/carrierhandover/upload?paperNo=" + paperNo);
+    }
+
+
+    function showPaper(paperNo) {
+//        alert(paperNo);
+        openOptionDialog("win_showPaper", "查看签单", "900", "400", "icon-search", "$!{path}/carrierhandover/showPaperSign?paperNo=" + paperNo);
+    }
+
+    function operateRecord(paperNo){
+        openOptionDialog("win_operate_record","查看操作记录","900","300","icon-search","$!{path}/carrierhandover/toOperateRecord?paperNo=" + paperNo);
+    }
+
+    function currentRowzhb(mailNo){
+        alert("1");
+        openOptionDialog("win_operate_record","查看追货宝","900","300","icon-search","$!{path}/carrierhandovernew/methodnew?mailNo=" + mailNo);
+    }
+
+    ##回退操作
+    function callBackPaper(paperNo, ifYfAccount, ifYsAccount) {
+        if (ifYfAccount == "1") {
+            showMessage({msg: '核算已经生成应付对账单,不能再回退!'});
+            return false;
+        }
+        if (ifYsAccount == "1") {
+            showMessage({msg: '核算已经生成应收对账单,不能再回退!'});
+            return false;
+        }
+        $.messager.confirm("确认", "确认回退吗？", function (r) {
+            if (r) {
+                jQuery.ajax({
+                    async: false,
+                    method: "GET",
+                    dataType: "json",
+                    url: "$!{path}/carrierhandover/paperBack",
+                    data: "paperNo=" + paperNo,
+                    success: function (data) {
+                        showMessage({msg: getAjaxResultMessage(data)});
+                        refresh();
+                    }
+                });
+            }
+        });
+    }
+
+
+    ##删除签单
+    function deletePaper(paperNo) {
+        $.messager.confirm("确认", "删除后将无法恢复,你确定？", function (r) {
+            if (r) {
+                jQuery.ajax({
+                    async: false,
+                    method: "GET",
+                    dataType: "json",
+                    url: "$!{path}/carrierhandover/deleteSignPaper",
+                    data: "paperNo=" + paperNo,
+                    success: function (data) {
+                        showMessage({msg: getAjaxResultMessage(data)});
+                        refresh();
+                    }
+                });
+            }
+        });
+    }
+
+
+    function followPaperInfo(paperNo) {
+    ##        $.ajax({
+    ##            url:"$!{path}/carrierhandover/followPaperInfo?paperNo="+paperNo,
+    ##            type:"post"
+    ##        })
+//        alert(paperNo);
+        openOptionDialog("win_followPaper", "跟踪信息", "1024", "600", "icon-vehicle", "$!{path}/carrierhandover/followPaperInfo?paperNo=" + paperNo);
+
+    }
+    function queryPaperInfo() {
+
+//        if($("#custId").combobox("getValue") == ""){
+//            showMessage({msg:"请选择工厂！"});
+//            return;
+//        }
+//
+//        if($("#warehouseId").combobox("getValue") == ""){
+//            showMessage({msg:"请选择库房！"});
+//            return;
+//        }
+
+//        if($("#doCreateTimeStart").combobox("getValue") == ""){
+//            showMessage({msg:"请选择创建时间！"});
+//            return;
+//        }
+
+//  timeStart
+        queryGrid('clientsign_datagrid', '$!{path}/carrierhandover/findAllDispatchingPaper');
+
+    }
+
+    function updatePaper(paperNo, ifYfAccount, ifYsAccount) {
+        if (ifYfAccount == "1") {
+            showMessage({msg: '核算已经生成应付对账单,不能再修改!'});
+            return false;
+        }
+        if (ifYsAccount == "1") {
+            showMessage({msg: '核算已经生成应收对账单,不能再修改!'});
+            return false;
+        }
+        openOptionDialog("win_showPaper", "修改交接单", "1300", "700", "icon-edit", "$!{path}/carrierhandover/updatePaperInfo?paperNo=" + paperNo);
+    }
+
+    function updatePaperAddDo(paperNo, ifYfAccount, ifYsAccount) {
+        if (ifYfAccount == "1") {
+            showMessage({msg: '核算已经生成应付对账单,不能再追加单据!'});
+            return false;
+        }
+        if (ifYsAccount == "1") {
+            showMessage({msg: '核算已经生成应收对账单,不能再追加单据!'});
+            return false;
+        }
+        openOptionDialog("win_Paper_addDo", "追加单据-查询单据", "1100", "600", "icon-edit", "$!{path}/carrierhandover/updatePaperAddDoQueryInit?paperNo=" + paperNo);
+    }
+    function updatePaperFee(paperNo, ifYfAccount, ifYsAccount) {
+        if (ifYfAccount == "1") {
+            showMessage({msg: '核算已经生成应付对账单,不能再修改!'});
+            return false;
+        }
+        if (ifYsAccount == "1") {
+            showMessage({msg: '核算已经生成应收对账单,不能再修改!'});
+            return false;
+        }
+        openOptionDialog("win_showPaperFEE", "修改交接单费用", "1100", "600", "icon-edit", "$!{path}/carrierhandover/updatePaperFeeInfo?paperNo=" + paperNo);
+    }
+
+    document.onkeydown = function (event) {
+        var e = event || window.event || arguments.callee.caller.arguments[0];
+        if (e && e.keyCode == 13) { // enter 键
+            //要做的事情
+            queryPaperInfo();
+        }
+    };
+    ##导出交接单excel
+    function dataExportAsyncSql() {
+        if (!$("#export").combobox('getValue')) {
+            showMessage({msg: '请选择模板类型！'});
+            return;
+        }
+        jQuery.ajax({
+            url: "$!{path}/carrierhandover/exportExcelSql",
+            dataType: 'json',
+            type: "post",
+            contentType: "application/x-www-form-urlencoded;charset=utf-8",##post提交控制中文乱码
+            data: {
+                async: 1,
+                exportType: $("#exportType").val(),
+//                        paperNo: $("#paperNo").val(),
+                'custNo': function () {
+                    return $('#custId').combobox('getValue');
+                },
+                'warehouseId': function () {
+                    return $('#warehouseId').combobox('getValue');
+                },
+                'consigneeId': function () {
+                    return $('#consigneeId').combobox('getValue');
+                },
+                'demandNo': function () {
+                    return $('#demandNo').val();
+                },
+                'consigneePlaceId': function () {
+                    return $('#consigneePlaceId').tmsPlaceSelect('getValue');
+                },
+                'consigneeConnect': function () {
+                    return $('#consigneeConnect').val();
+                },
+                'paperNo': function () {
+                    return $('#paperNo').val();
+                },
+                'doId': function () {
+                    return $("#doId").val();
+                },
+                'projectNumber': function () {
+                    return $("#projectNumber").val();
+                },
+                'refNo': function () {
+                ##客户单号
+                    return $("#refNo").val();
+                },
+                'originDoId': function () {
+                ##源交货单号
+                    return $("#originDoId").val();
+                },
+                'erpNo': function () {
+                ##ERP单号
+                    return $("#erpNo").val();
+                },
+                'carrierNo': function () {
+                    return $("#carrierNo").combobox('getValue');
+                },
+                'plateNumber': function () {
+                    return $("#plateNumber").val();
+                },
+                'createTimeStart': function () {
+                    var date = $("#doCreateTimeStart").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#timeStart').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 00:00";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+                },
+                'createTimeEnd': function () {
+                    var date = $("#doCreateTimeEnd").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#timeEnd').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 23:59";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+                },
+                'deliverTimeStart': function () {
+                ##发货时间
+                    var date = $("#doDeliverTimeStart").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#deliverTimeStart').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 00:00";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+//                            return $("#doDeliverTimeStart").datebox('getValue')+" "+$('#deliverTimeStart').timespinner('getValue');
+                },
+                'deliverTimeEnd': function () {
+                ##发货时间
+                    var date = $("#doDeliverTimeEnd").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#deliverTimeEnd').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 23:59";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+//                            return $("#doDeliverTimeEnd").datebox('getValue')+" "+$('#deliverTimeEnd').timespinner('getValue');
+                },
+                'signTimeStart': function () {
+                ##签收时间
+                    var date = $("#doSignTimeStart").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#signTimeStart').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 00:00";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+//                            return $("#doSignTimeStart").datetimebox('getValue')+" "+$('#signTimeStart').timespinner('getValue');
+                },
+                'signTimeEnd': function () {
+                ##签收时间
+                    var date = $("#doSignTimeEnd").datebox('getValue');
+                    if (!date) {
+                        return '';
+                    } else {
+                        var ts = $('#signTimeEnd').timespinner('getValue');
+                        if (!ts) {
+                            return date + " 23:59";
+                        } else {
+                            return date + " " + ts;
+                        }
+                    }
+//                            return $("#doSignTimeEnd").datetimebox('getValue')+" "+$('#signTimeEnd').timespinner('getValue');
+                },
+                'dispatchStatus': function () {
+                    return $('#dispatchStatus').combobox('getValues');
+                },
+                'isRlation': function () {
+                ##是否关联单据
+                    return $('#isOrNo').combobox('getValue');
+                },
+                'dispenseType': function () {
+                ##运配类型
+                    return $("#dispenseType").combobox('getValue');
+                },
+                'isLocal': function () {
+                ##市内外埠
+                    return $('#isLocal').combobox('getValue');
+                }
+            },
+            success: function (data) {
+                if (data != null) {
+                    if (data.flag == true) {
+                        $.messager.alert("提示", "请5分钟后去【数据导出结果】功能下下载，文件名为：" + data.fileName);
+                    } else {
+                        $.messager.alert("提示", "下载失败：" + data.remark);
+                    }
+                }
+            }
+        });
+
+    }
+    function batchSignReturn() {
+        var signReturnPaperNos = "";
+        var signReturnPapers = $('#clientsign_datagrid').datagrid('getChecked');
+        if (signReturnPapers.length < 1) {
+            showMessage({msg: '请勾选需要回单的交接单!'});
+            return false;
+        }
+        for (var i = 0; i < signReturnPapers.length; i++) {
+            if (signReturnPapers[i].dispatchStatus == '00' || signReturnPapers[i].dispatchStatus == '01') {
+                showMessage({msg: '交接单[' + signReturnPapers[i].paperNo + ']未签收，不可以回单!'});
+                return false;
+            }
+            if (signReturnPaperNos == "") {
+                signReturnPaperNos += signReturnPapers[i].paperNo;
+            } else {
+                signReturnPaperNos += "," + signReturnPapers[i].paperNo;
+            }
+        }
+        $.messager.confirm("提示", "您确定要回单？", function (r) {
+            $.ajax({
+                url: '$!{path}/carrierhandover/batchPaperSignReturn',
+                type: 'POST',
+                data: {paperNos: signReturnPaperNos},
+                dataType: 'json',
+                success: function (data) {
+                    if (data.flag == true) {
+                        showMessage({
+                            msg: '回单成功', fn: function () {
+                                queryPaperInfo();
+                            }
+                        });
+                    } else {
+                        showMessage({msg: data.remark});
+                    }
+                }
+            });
+        });
+    }
+</script>

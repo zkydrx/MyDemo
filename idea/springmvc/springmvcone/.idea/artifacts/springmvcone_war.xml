@@ -1,0 +1,23 @@
+<component name="ArtifactManager">
+  <artifact type="war" build-on-make="true" name="springmvcone:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="springmvcone.war">
+      <element id="artifact" artifact-name="springmvcone:war exploded" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="lib">
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/antlr-2.7.5.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/avalon-logkit-2.1.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/commons-collections-3.2.1.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/commons-lang-2.4.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/commons-logging-1.1.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/jdom-1.0.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/log4j-1.2.12.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/maven-ant-tasks-2.0.9.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/oro-2.0.8.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/servletapi-2.3.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/werken-xpath-0.9.4.jar" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

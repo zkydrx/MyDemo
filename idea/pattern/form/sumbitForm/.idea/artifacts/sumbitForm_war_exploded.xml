@@ -1,0 +1,18 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="sumbitForm:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/sumbitForm_war_exploded</output-path>
+    <root id="archive" name="sumbitForm_war exploded.war">
+      <element id="javaee-facet-resources" facet="sumbitForm/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="sumbitForm" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/lib/servletapi-2.3.jar" />
+          <element id="file-copy" path="D:/tools/jar/velocity/velocity-1.7/velocity-1.7/velocity-1.7.jar" />
+          <element id="library" level="project" name="Spring-4.1.5.RELEASE" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

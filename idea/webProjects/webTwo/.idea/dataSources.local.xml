@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal">
+    <data-source name="Oracle - tmsdb@115.238.110.19" uuid="a99570c5-8fcf-4025-87b0-242ed2c3dd4d">
+      <secret-storage>master_key</secret-storage>
+      <first-sync>true</first-sync>
+      <user-name>tmsnew</user-name>
+    </data-source>
+  </component>
+</project>

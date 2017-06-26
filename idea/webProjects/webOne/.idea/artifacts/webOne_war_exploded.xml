@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="webOne:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/webOne_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="webOne/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="webOne" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

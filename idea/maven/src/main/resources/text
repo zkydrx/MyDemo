@@ -1,0 +1,47 @@
+String parameter = {
+  success : 0,
+  errorMsg : "错误消息",
+  data : {
+   total : "总记录数",
+   rows : [ {
+    id : "任务ID",
+    workName : "任务名称",
+    assigneeName : "经办人姓名",
+    name : "流程步骤名称",
+    processInstanceInitiatorName : "发起人",
+    processInstanceStartTime : "发起时间",
+    createTime : "到达时间",
+    dueDate : "截止时间"
+   }, {
+    id : "ID",
+    workName : "名称",
+    assigneeName : "经办人",
+    name : "流程",
+    processInstanceInitiatorName : "发起人",
+    processInstanceStartTime : "发起",
+    createTime : "到达",
+    dueDate : "截止"
+   } ]
+  }
+ };
+JSONObject jsonObject =JSONObject.fromObject(parameter);
+
+System.out.println("success:"+jsonObject.get("success"));
+  System.out.println("errorMsg:"+jsonObject.get("errorMsg"));
+
+  System.err.println("total:"+jsonObject.getJSONObject("data").get("total"));
+
+  JSONObject data = jsonObject.getJSONObject("data");
+  JSONArray jsonArray = data.getJSONArray("row");
+  JSONObject row = null;
+  for (int i = 0; i < jsonArray.size(); i++) {
+   row = jsonArray.getJSONObject(i);
+   System.out.println("id:"+row.get("id"));
+   System.out.println("workName:"+row.get("workName"));
+   System.out.println("assigneeName:"+row.get("assigneeName"));
+   System.out.println("name:"+row.get("name"));
+   System.out.println("processInstanceInitiatorName:"+row.get("processInstanceInitiatorName"));
+   System.out.println("processInstanceStartTime:"+row.get("processInstanceStartTime"));
+   System.out.println("createTime:"+row.get("createTime"));
+   System.out.println("dueDate:"+row.get("dueDate"));
+  }
